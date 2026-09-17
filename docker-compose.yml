@@ -1,19 +1,39 @@
 version: '3.8'
 
 services:
+  mongo:
+    image: mongo:latest
+    container_name: mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - app-network
+
   auth-service:
     build: ./auth-service
     ports:
       - "5001:5001"
     environment:
       - PORT=5001
+      - MONGO_URI=mongodb://mongo:27017/realtime-task-db
+    depends_on:
+      - mongo
+    networks:
+      - app-network
 
   task-service:
     build: ./task-service
     ports:
-      - "5002:5002"
+      - "5003:5002"  
     environment:
       - PORT=5002
+      - MONGO_URI=mongodb://mongo:27017/realtime-task-db
+    depends_on:
+      - mongo
+    networks:
+      - app-network
 
   api-gateway:
     build: ./api-gateway
@@ -22,3 +42,12 @@ services:
     depends_on:
       - auth-service
       - task-service
+    networks:
+      - app-network
+
+volumes:
+  mongo_data:
+
+networks:
+  app-network:
+    driver: bridge
